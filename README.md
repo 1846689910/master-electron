@@ -895,6 +895,7 @@ const showImage = (e) => {
 ### [Offscreen Rendering](https://www.electronjs.org/docs/latest/tutorial/offscreen-rendering)
 
 load and render content in browser window on a separate thread, since it is not visible, so uses less resources
+like fetch,load resources
 
 prefer Software output device, to render in CPU, needs to disable GPU acceeleration
 
@@ -1021,4 +1022,27 @@ ref:
 - [electron-window-state](https://www.npmjs.com/package/electron-window-state)
 - [CSS Flex box guide](https://css-tricks.com/snippets/css/a-guide-to-flexbox/)
 
+- off screen rendering for loading resources
+- proxy window
 
+error: ipcRenderer invoke: an object could not be cloned;
+- this means the js file that is loading including non-serializeable content, like `appendChild`, but better to use `append`
+
+`window.opener.postMessage`: send message to the window who opens the current window
+
+electron is avoiding the remote module, so not creating menu with remote module
+
+create menu in a separate js file
+- Mac always require the first menu to be the name of app
+  ```js
+  let template = [
+    {label: "Items", submenu: []},
+    {role: "editMenu"},
+    {role: "windowMenu"},
+    {role: "help", submenu: [
+      {label: "Learn more", click(){ shell.openExternal("https://github.com") }}
+    ]}
+  ]
+  if (process.platform === "darwin") template.unshift({ role: "appMenu" })
+
+  ```
