@@ -1046,3 +1046,202 @@ create menu in a separate js file
   if (process.platform === "darwin") template.unshift({ role: "appMenu" })
 
   ```
+
+## Application Distribution
+
+### electron-builder
+- [electron-builder](https://www.electron.build/) module, install as devDependencies
+
+```
+electron-builder --help
+electron-builder -mac 
+only build for mac on mac os, if you build on mac for windows, need app veyor
+
+electron-builder -mwl // build for mac,windows,linux
+```
+[cloudconvert.com](https://cloudconvert.com/) used to convert image format
+
+mac uses ICNS format image, windows uses ICO format image
+
+package.json
+```json
+{
+  "build": {
+    "appId": "com.stackacademytv.readit",
+    "copyright": "Copyright Stackacademy.tv",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "zip"
+    },
+    "linux": {
+
+    }
+  }
+}
+```
+
+[back to top](#top)
+
+### Code Signing
+
+- [code signing](https://www.electron.build/code-signing)
+
+unsigned app will be recognized by system as malware or pop up any error windows
+
+mac: Apple Developer Program
+
+windows: Comodo SSL store
+- `electron-builder create-self-signed-cert` windows build could generate a self signed cert
+
+[back to top](#top)
+
+### Publishing Releases
+
+- publish to app store
+- publish to users directly
+
+[electron-builder auto update](https://www.electron.build/auto-update)
+
+Github Releases -> fill version and title and descrition -> Save 
+
+then, generate personal token -> copy to electron app private/GH_TOKEN.txt
+
+package.json
+```json
+"scripts": {
+  //...
+  "release": "electron-builder -m -p 'onTagOrDraft'"
+}
+"build": {
+  "publish": {
+    "provider": "github"
+  }
+}
+```
+```
+GH_TOKEN=... npm run release
+```
+
+### AutoUpdater
+
+```js
+const { autoUpdater } = require("electron-updater");
+autoUpdater.logger = require("electron-log")
+autoUpdater.logger.transports.file.level = "info"
+// check for update
+module.exports = {
+  autoUpdater.checkForUpdates
+};
+```
+
+### Release & Update
+
+use appV1.0.0, do bug fix patch version V1.0.1 to publish and install the patch
+
+- fix bug
+- update version to 1.0.1
+- draft release on Github, save as draft
+- `GH_TOKEN=... npm run release`
+- after publish, open app to update with prompt window
+
+## MacOS Notarization
+
+What is Notarization?
+
+a service that app detect if malicious code 
+
+1. MAS: Mac App Store
+2. direct to user
+
+- [electron-notarize](https://github.com/electron/electron-notarize)
+- [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime)
+
+Mac OS Gate keeper
+```
+sudo spctl --status
+sudo spctl --master-enable
+subo spctl --master-disable
+sudo spctl --assess PATH # check if an app is notarized
+```
+notarize.js
+```js
+exports.default = async function(context){
+  if (process.platform !== "darwin") return
+  let appName = context.packager.appInfo.productFilename
+  let appDir = context.appOutDir
+  // run notarize
+  return awaitnotarize({
+    appBundleId: "com.stackacademytv.readit",
+    appPath: `${appDir}/${appName}.app`,
+    appId: process.env.appleId,
+    appleIdPassword: process.env.appleIdPassword
+  })
+}
+```
+may meet issue for priviledges with the self notarize like access camera
+
+## MacOS Touch Bar
+
+- [TouchBar](https://www.electronjs.org/docs/latest/api/touch-bar)
+- [TouchBar Simulator](https://sindresorhus.com/touch-bar-simulator/)
+
+```js
+const { TouchBar } = require("electron");
+
+const tbLabel = new TouchBar.TouchBarLabel({
+  label: "Theme:",
+})
+const tbButton = new TouchBar.TouchBarButton({
+  label: "My Button",
+  // backgroundColor: "skyblue"
+  icon: `${__dirname}/file-code-solid@2x.png`,
+  iconPosition: "left",
+  click: () => {
+    mainWindow.webContents.openDevTools()
+  }
+});
+const tbSpacer = new TouchBar.TouchBarSpacer({
+  size: "flex"
+});
+
+const tbPicker = new TouchBar.TouchBarColorPicker({
+  change: color => {
+    mainWindow.webContents.insertCSS(`body{background-color:${color};}`)
+  }
+}) // color picker
+
+const tbSlider = new TouchBar.TouchBarSlider({
+  label: "Size",
+  minValue: 500,
+  maxValue: 1000,
+  value: 500,
+  change: val => {
+    mainWindow.setSize(val, val, true) // resize with animation
+  }
+})
+const tbPopover = new TouchBar.TouchBarPopover({ // create a popover for slider use only, when user click it, the whole bar
+// will show the slider only
+  label: "Size",
+  items: new TouchBar({ items: [tbSlider] })
+});
+
+const touchBar = new TouchBar({
+  items: [
+    tbLabel,
+    tbPicker,
+    tbPopover,
+    tbSpacer,
+    tbButton,
+  ],
+
+});
+
+// set touch bar on Mac
+
+if (process.platform === "darwin") {
+  mainWindow.setTouchBar(touchBar)
+}
+```
