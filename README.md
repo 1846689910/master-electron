@@ -89,7 +89,7 @@ const { BrowserWindow } = require("electron");
 const win = new BrowserWindow({ width: 800, height: 600 });
 
 // Load a remote URL
-win.loadURL("https://google.com");
+win.loadURL("https://google.com"); // must starts with http(s) or other protocol, should not starts with only www.
 
 // Or load a local HTML file
 win.loadFile("index.html");
